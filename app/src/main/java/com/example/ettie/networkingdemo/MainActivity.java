@@ -1,9 +1,12 @@
 package com.example.ettie.networkingdemo;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.Buffer;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -39,6 +42,14 @@ public class MainActivity extends Activity {
         }
     }
 
+    public void downloadText(View view) {
+        if (isNetworkAvailable()) {
+            new ReadStreamTask().execute("http://www.i-ducate.com");
+        } else {
+            Toast.makeText(this, "Network is not available", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private boolean isNetworkAvailable() {
         boolean available = false;
 
@@ -49,6 +60,51 @@ public class MainActivity extends Activity {
             available = true;
         }
         return available;
+    }
+
+    private String readStream(String urlStr) throws IOException {
+        String str = "";
+        InputStream inputStream = null;
+        BufferedReader reader = null;
+
+        try {
+            URL url = new URL(urlStr);
+            HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+            inputStream = urlConnection.getInputStream();
+
+            reader = new BufferedReader(new InputStreamReader(inputStream));
+            String line = "";
+
+            while ((line = reader.readLine()) != null) {
+                str += line;
+            }
+        } catch (Exception e) {
+            Log.d("NetworkingDemo", e.toString());
+        } finally {
+            inputStream.close();
+            reader.close();
+        }
+        return str;
+    }
+
+    private class ReadStreamTask extends AsyncTask<String, Void, String> {
+
+        String str = "";
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+                str = readStream(params[0]);
+            } catch (Exception e) {
+                Log.d("NetworkingDemo", e.toString());
+            }
+            return str;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Toast.makeText(getBaseContext(), result, Toast.LENGTH_LONG).show();
+        }
     }
 
     private Bitmap downloadImage(String urlStr) throws IOException {
